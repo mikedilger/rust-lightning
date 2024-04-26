@@ -1069,9 +1069,22 @@ impl RawBolt11Invoice {
 	}
 
 	pub fn amount_pico_btc(&self) -> Option<u64> {
-		self.hrp.raw_amount.map(|v| {
-			v * self.hrp.si_prefix.as_ref().map_or(1_000_000_000_000, |si| { si.multiplier() })
-		})
+        match self.hrp.raw_amount {
+            None => None,
+            Some(v) => {
+                let (product, overflow) = v.overflowing_mul(
+                    self.hrp
+                        .si_prefix
+                        .as_ref()
+                        .map_or(1_000_000_000_000, |si| { si.multiplier() })
+                );
+                if overflow {
+                    None
+                } else {
+                    Some(product)
+                }
+            }
+        }
 	}
 
 	pub fn currency(&self) -> Currency {
